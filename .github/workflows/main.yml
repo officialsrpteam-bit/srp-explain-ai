@@ -30,20 +30,18 @@ jobs:
         with:
           gradle-version: 8.9
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Accept Android SDK Licenses
-        run: yes | sdkmanager --licenses
+        run: |
+          yes | sdkmanager --licenses || true
 
       - name: Install Android SDK Packages
         run: |
-          sdkmanager "platforms;android-35"
-          sdkmanager "build-tools;35.0.0"
-          sdkmanager "platform-tools"
+          sdkmanager --sdk_root="$ANDROID_HOME" "platforms;android-35"
+          sdkmanager --sdk_root="$ANDROID_HOME" "build-tools;35.0.0"
+          sdkmanager --sdk_root="$ANDROID_HOME" "platform-tools"
 
       - name: Build Debug APK
-        run: gradle assembleDebug
+        run: gradle --no-daemon assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
