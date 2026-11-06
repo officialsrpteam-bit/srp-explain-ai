@@ -1,13 +1,14 @@
-
 package com.srpteam.srpexplainai
 
 import android.content.Context
-import android.os.Bundle
-import android.speech.tts.TextToSpeech
-import android.speech.tts.UtteranceProgressListener
+import android.os.Handler
+import android.os.Looper
 import java.io.File
-import java.util.Locale
 
+/**
+ * App-facing manager for the Sherpa-ONNX offline neural voice engine.
+ * It never silently falls back to Android's basic system TTS.
+ */
 class VoiceoverManager(
     context: Context,
     private val onReady: (Boolean, String) -> Unit,
@@ -15,35 +16,36 @@ class VoiceoverManager(
     private val onError: (String) -> Unit
 ) {
     private val appContext = context.applicationContext
-    private var tts: TextToSpeech? = null
-    private var initialized = false
+    private val engine = SherpaVoiceEngine(appContext)
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val modelDirectory = File(appContext.filesDir, "voice-models/bn-male")
+    @Volatile private var ready = false
 
     init {
-        tts = TextToSpeech(appContext) { status ->
-            initialized = status == TextToSpeech.SUCCESS
-            onReady(initialized, if (initialized) "Voice engine ready"
-                else "Voice engine initialization failed")
+        if (engine.isModelInstalled(modelDirectory)) {
+            engine.loadVitsModel(modelDirectory) { success, message ->
+                ready = success
+                onReady(success, message)
+            }
+        } else {
+            onReady(
+                false,
+                "Neural runtime connected. A verified Bengali voice model is still required."
+            )
         }
     }
 
     fun generate(text: String, language: String) {
-        if (!initialized || text.isBlank()) {
-            onError(if (text.isBlank()) "Enter your script" else "Voice engine is not ready")
+        if (text.isBlank()) {
+            onError("Enter your script")
             return
         }
-
-        val locale = when (language) {
-            "বাংলা" -> Locale.forLanguageTag("bn-BD")
-            "English" -> Locale.US
-            "Hindi" -> Locale.forLanguageTag("hi-IN")
-            else -> Locale.US
+        if (!ready) {
+            onError("A verified neural voice model is not installed yet")
+            return
         }
-
-        val languageResult = tts?.setLanguage(locale)
-        if (languageResult == TextToSpeech.LANG_MISSING_DATA ||
-            languageResult == TextToSpeech.LANG_NOT_SUPPORTED
-        ) {
-            onError("$language voice is not supported")
+        if (language != "বাংলা") {
+            onError("This installed model is Bengali only")
             return
         }
 
@@ -52,45 +54,18 @@ class VoiceoverManager(
             onError("Cannot create voice folder")
             return
         }
-
-        val outputFile = File(folder, "voiceover_${System.currentTimeMillis()}.wav")
-        val utteranceId = outputFile.name
-
-        tts?.setSpeechRate(1.0f)
-        tts?.setPitch(1.0f)
-
-        tts?.setOnUtteranceProgressListener(
-            object : UtteranceProgressListener() {
-                override fun onStart(id: String) {}
-
-                override fun onDone(id: String) {
-                    if (id == utteranceId && outputFile.exists()) {
-                        this@VoiceoverManager.onComplete(outputFile)
-                    }
-                }
-
-                override fun onError(id: String) {
-                    this@VoiceoverManager.onError("Voice generation failed")
-                }
+        val outputFile = File(folder, "neural_voiceover_${System.currentTimeMillis()}.wav")
+        engine.generate(text, outputFile) { success, file, message ->
+            if (success && file != null) {
+                onComplete(file)
+            } else {
+                onError(message)
             }
-        )
-
-        val result = tts?.synthesizeToFile(
-            text,
-            Bundle(),
-            outputFile,
-            utteranceId
-        )
-
-        if (result != TextToSpeech.SUCCESS) {
-            onError("Could not start voice generation")
         }
     }
 
     fun shutdown() {
-        tts?.stop()
-        tts?.shutdown()
-        tts = null
-        initialized = false
+        ready = false
+        engine.shutdown()
     }
 }
