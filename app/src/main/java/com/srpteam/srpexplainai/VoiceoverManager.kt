@@ -21,23 +21,14 @@ class VoiceoverManager(
     init {
         tts = TextToSpeech(appContext) { status ->
             initialized = status == TextToSpeech.SUCCESS
-
-            if (initialized) {
-                onReady(true, "Voice engine ready")
-            } else {
-                onReady(false, "Voice engine initialization failed")
-            }
+            onReady(initialized, if (initialized) "Voice engine ready"
+                else "Voice engine initialization failed")
         }
     }
 
     fun generate(text: String, language: String) {
-        if (!initialized || tts == null) {
-            onError("Voice engine is not ready")
-            return
-        }
-
-        if (text.isBlank()) {
-            onError("Please enter your script")
+        if (!initialized || text.isBlank()) {
+            onError(if (text.isBlank()) "Enter your script" else "Voice engine is not ready")
             return
         }
 
@@ -48,61 +39,50 @@ class VoiceoverManager(
             else -> Locale.US
         }
 
-        val result = tts?.setLanguage(locale)
-
-        if (result == TextToSpeech.LANG_MISSING_DATA ||
-            result == TextToSpeech.LANG_NOT_SUPPORTED
+        val languageResult = tts?.setLanguage(locale)
+        if (languageResult == TextToSpeech.LANG_MISSING_DATA ||
+            languageResult == TextToSpeech.LANG_NOT_SUPPORTED
         ) {
-            onError("$language voice is not supported on this device")
+            onError("$language voice is not supported")
             return
         }
+
+        val folder = File(appContext.getExternalFilesDir(null), "SRPVoiceovers")
+        if (!folder.exists() && !folder.mkdirs()) {
+            onError("Cannot create voice folder")
+            return
+        }
+
+        val outputFile = File(folder, "voiceover_${System.currentTimeMillis()}.wav")
+        val utteranceId = outputFile.name
 
         tts?.setSpeechRate(1.0f)
         tts?.setPitch(1.0f)
 
-        val folder = File(
-            appContext.getExternalFilesDir(null),
-            "SRPVoiceovers"
-        )
-
-        if (!folder.exists()) {
-            folder.mkdirs()
-        }
-
-        val outputFile = File(
-            folder,
-            "voiceover_${System.currentTimeMillis()}.wav"
-        )
-
-        val utteranceId = outputFile.name
-
         tts?.setOnUtteranceProgressListener(
             object : UtteranceProgressListener() {
-
                 override fun onStart(id: String) {}
 
                 override fun onDone(id: String) {
                     if (id == utteranceId && outputFile.exists()) {
-                        onComplete(outputFile)
+                        this@VoiceoverManager.onComplete(outputFile)
                     }
                 }
 
                 override fun onError(id: String) {
-                    onError("Voice generation failed")
+                    this@VoiceoverManager.onError("Voice generation failed")
                 }
             }
         )
 
-        val params = Bundle()
-
-        val resultCode = tts?.synthesizeToFile(
+        val result = tts?.synthesizeToFile(
             text,
-            params,
+            Bundle(),
             outputFile,
             utteranceId
         )
 
-        if (resultCode != TextToSpeech.SUCCESS) {
+        if (result != TextToSpeech.SUCCESS) {
             onError("Could not start voice generation")
         }
     }
