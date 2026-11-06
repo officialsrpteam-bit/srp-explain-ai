@@ -18,6 +18,7 @@ fun VoiceoverPanel(script: String, language: String) {
     var status by remember { mutableStateOf("Initializing voice engine...") }
     var audioFile by remember { mutableStateOf<File?>(null) }
     var player by remember { mutableStateOf<MediaPlayer?>(null) }
+    var speed by remember { mutableFloatStateOf(1.0f) }
 
     val manager = remember {
         VoiceoverManager(
@@ -64,11 +65,14 @@ fun VoiceoverPanel(script: String, language: String) {
                 color = Muted
             )
 
+            Text("Narration speed: " + String.format("%.1f", speed) + "x", color = androidx.compose.ui.graphics.Color.White)
+            Slider(value = speed, onValueChange = { speed = it }, valueRange = 0.8f..1.2f, steps = 3)
+
             Button(
                 onClick = {
                     audioFile = null
                     status = "Generating voiceover..."
-                    manager.generate(script, language)
+                    manager.generate(script, language, speed = speed)
                 },
                 enabled = ready && script.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
@@ -88,11 +92,18 @@ fun VoiceoverPanel(script: String, language: String) {
                                 it.release()
                                 player = null
                             }
-                            newPlayer.prepare()
-                            newPlayer.start()
+                            newPlayer.setOnPreparedListener { prepared ->
+                                prepared.start()
+                                status = "Playing voiceover"
+                            }
+                            newPlayer.setOnErrorListener { failed, _, _ ->
+                                failed.release()
+                                player = null
+                                status = "Could not play audio"
+                                true
+                            }
                             player = newPlayer
-
-                            status = "Playing voiceover"
+                            newPlayer.prepareAsync()
                         } catch (e: Exception) {
                             status = "Could not play audio"
                         }
