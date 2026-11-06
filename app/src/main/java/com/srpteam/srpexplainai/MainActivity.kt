@@ -26,16 +26,7 @@ private val CardColor = Color(0xFF15141E)
 private val Purple = Color(0xFF9B35F5)
 private val Muted = Color(0xFF9995AA)
 
-data class StoryScene(
-    val id: Int,
-    val title: String,
-    val description: String,
-    val duration: Int = 5,
-    val camera: String = "Cinematic Close-up"
-)
-
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -65,54 +56,24 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun SRPApp() {
-
     var script by remember { mutableStateOf("") }
-    var duration by remember { mutableIntStateOf(5) }
     var language by remember { mutableStateOf("বাংলা") }
+    var duration by remember { mutableIntStateOf(5) }
+    var isGenerating by remember { mutableStateOf(false) }
 
-    var scenes by remember {
-        mutableStateOf(listOf<StoryScene>())
-    }
-
-    var showStoryboard by remember {
-        mutableStateOf(false)
-    }
-
-    if (showStoryboard) {
-
-        StoryboardScreen(
-            scenes = scenes,
-            onScenesChange = { scenes = it },
-            onBack = { showStoryboard = false }
+    if (isGenerating) {
+        GenerationScreen(
+            onBack = { isGenerating = false }
         )
-
     } else {
-
         HomeScreen(
             script = script,
             onScriptChange = { script = it },
-            duration = duration,
-            onDurationChange = { duration = it },
             language = language,
             onLanguageChange = { language = it },
-            onCreate = {
-
-                val parts = script
-                    .split(Regex("[.!?।\\n]+"))
-                    .map { it.trim() }
-                    .filter { it.isNotBlank() }
-
-                scenes = parts.mapIndexed { index, part ->
-
-                    StoryScene(
-                        id = index + 1,
-                        title = "Scene ${index + 1}",
-                        description = part
-                    )
-                }
-
-                showStoryboard = true
-            }
+            duration = duration,
+            onDurationChange = { duration = it },
+            onGenerate = { isGenerating = true }
         )
     }
 }
@@ -121,13 +82,12 @@ fun SRPApp() {
 fun HomeScreen(
     script: String,
     onScriptChange: (String) -> Unit,
-    duration: Int,
-    onDurationChange: (Int) -> Unit,
     language: String,
     onLanguageChange: (String) -> Unit,
-    onCreate: () -> Unit
+    duration: Int,
+    onDurationChange: (Int) -> Unit,
+    onGenerate: () -> Unit
 ) {
-
     val context = LocalContext.current
 
     Column(
@@ -136,9 +96,8 @@ fun HomeScreen(
             .background(Background)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 22.dp)
-            .padding(top = 24.dp, bottom = 30.dp),
-
-        verticalArrangement = Arrangement.spacedBy(22.dp)
+            .padding(top = 26.dp, bottom = 35.dp),
+        verticalArrangement = Arrangement.spacedBy(23.dp)
     ) {
 
         // HEADER
@@ -147,7 +106,6 @@ fun HomeScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Text(
                 "▶",
                 color = Purple,
@@ -155,7 +113,7 @@ fun HomeScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(12.dp))
 
             Column {
                 Text(
@@ -164,11 +122,10 @@ fun HomeScreen(
                     fontSize = 21.sp,
                     fontWeight = FontWeight.Bold
                 )
-
                 Text(
                     "Explain AI",
                     color = Purple,
-                    fontSize = 18.sp,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -176,9 +133,10 @@ fun HomeScreen(
             Spacer(Modifier.weight(1f))
 
             Text(
-                "●",
-                color = Purple,
-                fontSize = 18.sp
+                "AI VIDEO STUDIO",
+                color = Muted,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold
             )
         }
 
@@ -187,30 +145,29 @@ fun HomeScreen(
         Column(
             verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
-
             Text(
-                "Create Something",
+                "Bring Your Ideas",
                 color = Color.White,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Bold
             )
 
             Text(
-                "Extraordinary.",
+                "To Life.",
                 color = Purple,
-                fontSize = 30.sp,
+                fontSize = 34.sp,
                 fontWeight = FontWeight.Bold
             )
 
             Text(
-                "Turn your script into stunning 3D explainer videos.",
+                "Transform your script into realistic cinematic 3D CGI explainer videos.",
                 color = Muted,
-                fontSize = 15.sp,
-                lineHeight = 23.sp
+                fontSize = 14.sp,
+                lineHeight = 22.sp
             )
         }
 
-        // SCRIPT TO VIDEO CARD
+        // MAIN FEATURE CARD
 
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -219,35 +176,30 @@ fun HomeScreen(
                 containerColor = CardColor
             )
         ) {
-
-            Row(
-                modifier = Modifier.padding(20.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.padding(19.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp)
             ) {
-
                 Text(
-                    "▶",
+                    "✦  SCRIPT TO CINEMATIC VIDEO",
                     color = Purple,
-                    fontSize = 35.sp
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
                 )
 
-                Spacer(Modifier.width(16.dp))
+                Text(
+                    "Voice First. Visuals Second.",
+                    color = Color.White,
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
-                Column {
-
-                    Text(
-                        "Script to Video",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Text(
-                        "Create realistic 3D CGI videos",
-                        color = Muted,
-                        fontSize = 12.sp
-                    )
-                }
+                Text(
+                    "First generate the voiceover. Then create perfectly timed 3D visuals that follow its narration.",
+                    color = Muted,
+                    fontSize = 13.sp,
+                    lineHeight = 20.sp
+                )
             }
         }
 
@@ -256,31 +208,34 @@ fun HomeScreen(
         Column(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-
             Text(
                 "Your Script",
                 color = Color.White,
                 fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                "Write or paste your explanation script below.",
+                color = Muted,
+                fontSize = 12.sp
             )
 
             OutlinedTextField(
                 value = script,
                 onValueChange = onScriptChange,
-                modifier = Modifier.fillMaxWidth(),
-
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 155.dp),
                 placeholder = {
                     Text(
                         "Paste your script here...",
                         color = Muted
                     )
                 },
-
-                minLines = 4,
-                maxLines = 7,
-
+                minLines = 5,
+                maxLines = 9,
                 shape = RoundedCornerShape(16.dp),
-
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Purple,
                     unfocusedBorderColor = Color(0xFF383344),
@@ -291,25 +246,70 @@ fun HomeScreen(
                     unfocusedContainerColor = CardColor
                 )
             )
-        }
-
-        // VIDEO DURATION
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
 
             Text(
-                "Video Duration",
+                "${script.length} characters",
+                color = Muted,
+                fontSize = 11.sp,
+                modifier = Modifier.align(Alignment.End)
+            )
+        }
+
+        // LANGUAGE
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(11.dp)
+        ) {
+            Text(
+                "Voiceover Language",
                 color = Color.White,
                 fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.Bold
             )
 
             Text(
-                "Select your preferred video length",
+                "Choose the language for your narration.",
                 color = Muted,
-                fontSize = 13.sp
+                fontSize = 12.sp
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("বাংলা", "English", "Hindi").forEach { item ->
+                    FilterChip(
+                        selected = language == item,
+                        onClick = { onLanguageChange(item) },
+                        label = { Text(item) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Purple,
+                            selectedLabelColor = Color.White,
+                            containerColor = CardColor,
+                            labelColor = Muted
+                        )
+                    )
+                }
+            }
+        }
+
+        // DURATION
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(11.dp)
+        ) {
+            Text(
+                "Target Video Duration",
+                color = Color.White,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                "This is a target length. Final timing will follow the generated voiceover.",
+                color = Muted,
+                fontSize = 12.sp,
+                lineHeight = 18.sp
             )
 
             Row(
@@ -318,20 +318,11 @@ fun HomeScreen(
                 ),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-
-                listOf(1, 5, 10, 15, 20, 25, 30).forEach {
-
+                listOf(1, 5, 10, 15, 20, 25, 30).forEach { item ->
                     FilterChip(
-                        selected = duration == it,
-
-                        onClick = {
-                            onDurationChange(it)
-                        },
-
-                        label = {
-                            Text("${it}m")
-                        },
-
+                        selected = duration == item,
+                        onClick = { onDurationChange(item) },
+                        label = { Text("${item}m") },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = Purple,
                             selectedLabelColor = Color.White,
@@ -343,207 +334,32 @@ fun HomeScreen(
             }
 
             Text(
-                "Selected: $duration Minutes",
+                "Selected: $duration minutes",
                 color = Purple,
-                fontSize = 13.sp
-            )
-        }
-
-        // LANGUAGE
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-
-            Text(
-                "Video Language",
-                color = Color.White,
-                fontSize = 18.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold
             )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-
-                listOf("বাংলা", "English", "Hindi").forEach {
-
-                    FilterChip(
-                        selected = language == it,
-
-                        onClick = {
-                            onLanguageChange(it)
-                        },
-
-                        label = {
-                            Text(it)
-                        },
-
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Purple,
-                            selectedLabelColor = Color.White,
-                            containerColor = CardColor,
-                            labelColor = Muted
-                        )
-                    )
-                }
-            }
         }
-
-        // CREATE STORYBOARD
-
-        Button(
-            onClick = {
-
-                if (script.isBlank()) {
-
-                    Toast.makeText(
-                        context,
-                        "Please enter your script first.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                } else {
-
-                    onCreate()
-                }
-            },
-
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(58.dp),
-
-            shape = RoundedCornerShape(16.dp),
-
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Purple,
-                contentColor = Color.White
-            )
-        ) {
-
-            Text(
-                "Create Storyboard  →",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        // PROJECTS
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-
-            Text(
-                "Your Projects",
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = CardColor
-                )
-            ) {
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(105.dp),
-
-                    contentAlignment = Alignment.Center
-                ) {
-
-                    Text(
-                        "No projects yet",
-                        color = Muted,
-                        fontSize = 14.sp
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun StoryboardScreen(
-    scenes: List<StoryScene>,
-    onScenesChange: (List<StoryScene>) -> Unit,
-    onBack: () -> Unit
-) {
-
-    val context = LocalContext.current
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Background)
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-
-        verticalArrangement = Arrangement.spacedBy(18.dp)
-    ) {
-
-        // TOP BAR
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            TextButton(onClick = onBack) {
-                Text("← Back", color = Purple)
-            }
-
-            Spacer(Modifier.weight(1f))
-
-            Text(
-                "SRP Explain AI",
-                color = Purple,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        // TITLE
-
-        Text(
-            "Your Storyboard",
-            color = Color.White,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Text(
-            "${scenes.size} scenes created · Review before video generation",
-            color = Muted,
-            fontSize = 13.sp
-        )
 
         // VISUAL STYLE
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(
                 containerColor = CardColor
             )
         ) {
-
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(17.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-
                 Text(
                     "VISUAL STYLE",
                     color = Purple,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
                 )
-
-                Spacer(Modifier.height(8.dp))
 
                 Text(
                     "Realistic Cinematic 3D CGI",
@@ -553,202 +369,204 @@ fun StoryboardScreen(
                 )
 
                 Text(
-                    "High-detail lighting · Realistic materials · Cinematic camera",
+                    "Realistic materials • Detailed environments • Cinematic lighting • Dynamic camera movement",
                     color = Muted,
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
+                    lineHeight = 19.sp
                 )
             }
         }
 
-        // SCENE LIST
-
-        scenes.forEachIndexed { index, scene ->
-
-            var description by remember(scene.id) {
-                mutableStateOf(scene.description)
-            }
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = CardColor
-                )
-            ) {
-
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-
-                        Text(
-                            "SCENE ${index + 1}",
-                            color = Purple,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Spacer(Modifier.weight(1f))
-
-                        Text(
-                            "${scene.duration}s",
-                            color = Muted
-                        )
-                    }
-
-                    // PREVIEW PLACEHOLDER
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(125.dp)
-                            .background(
-                                Color(0xFF242033),
-                                RoundedCornerShape(12.dp)
-                            ),
-
-                        contentAlignment = Alignment.Center
-                    ) {
-
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-
-                            Text(
-                                "▶",
-                                color = Purple,
-                                fontSize = 32.sp
-                            )
-
-                            Text(
-                                "3D Scene Preview",
-                                color = Muted,
-                                fontSize = 12.sp
-                            )
-                        }
-                    }
-
-                    Text(
-                        scene.title,
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Text(
-                        "Scene Description",
-                        color = Muted,
-                        fontSize = 12.sp
-                    )
-
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = {
-                            description = it
-                        },
-
-                        modifier = Modifier.fillMaxWidth(),
-
-                        minLines = 2,
-                        maxLines = 5,
-
-                        shape = RoundedCornerShape(12.dp),
-
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Purple,
-                            unfocusedBorderColor = Color(0xFF383344),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            cursorColor = Purple,
-                            focusedContainerColor = Background,
-                            unfocusedContainerColor = Background
-                        )
-                    )
-
-                    Text(
-                        "Camera: ${scene.camera}",
-                        color = Muted,
-                        fontSize = 12.sp
-                    )
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-
-                        OutlinedButton(
-                            onClick = {
-
-                                onScenesChange(
-                                    scenes.map {
-                                        if (it.id == scene.id) {
-                                            it.copy(description = description)
-                                        } else {
-                                            it
-                                        }
-                                    }
-                                )
-
-                                Toast.makeText(
-                                    context,
-                                    "Scene saved",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            },
-
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Save")
-                        }
-
-                        OutlinedButton(
-                            onClick = {
-
-                                onScenesChange(
-                                    scenes.filterNot {
-                                        it.id == scene.id
-                                    }
-                                )
-                            },
-
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Delete")
-                        }
-                    }
-                }
-            }
-        }
-
-        // CONTINUE BUTTON
+        // GENERATE BUTTON
 
         Button(
             onClick = {
-
-                Toast.makeText(
-                    context,
-                    "AI video generation will be connected in a later step.",
-                    Toast.LENGTH_LONG
-                ).show()
+                if (script.isBlank()) {
+                    Toast.makeText(
+                        context,
+                        "Please enter your script first.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    onGenerate()
+                }
             },
-
             modifier = Modifier
                 .fillMaxWidth()
-                .height(58.dp),
-
+                .height(59.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Purple,
                 contentColor = Color.White
-            ),
-
-            shape = RoundedCornerShape(16.dp)
+            )
         ) {
+            Text(
+                "Generate Video  →",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Text(
+            "Powered by SRP Team",
+            color = Muted,
+            fontSize = 11.sp,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+    }
+}
+
+@Composable
+fun GenerationScreen(
+    onBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Background)
+            .verticalScroll(rememberScrollState())
+            .padding(22.dp),
+        verticalArrangement = Arrangement.spacedBy(22.dp)
+    ) {
+
+        TextButton(onClick = onBack) {
+            Text(
+                "← Back to Home",
+                color = Purple
+            )
+        }
+
+        Text(
+            "Video Generation",
+            color = Color.White,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Text(
+            "Your script is ready for the voice-first generation pipeline.",
+            color = Muted,
+            fontSize = 14.sp,
+            lineHeight = 21.sp
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = CardColor
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(13.dp)
+            ) {
+                Text(
+                    "GENERATION STATUS",
+                    color = Purple,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    "Waiting for AI backend",
+                    color = Color.White,
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    "The generation service has not been connected yet. No video is being generated at this stage.",
+                    color = Muted,
+                    fontSize = 13.sp,
+                    lineHeight = 20.sp
+                )
+
+                HorizontalDivider(
+                    color = Color(0xFF383344)
+                )
+
+                GenerationStep(
+                    number = "01",
+                    title = "Voiceover Generation",
+                    description = "Create narration from your script."
+                )
+
+                GenerationStep(
+                    number = "02",
+                    title = "Voiceover Analysis",
+                    description = "Extract meaning, pauses and timestamps."
+                )
+
+                GenerationStep(
+                    number = "03",
+                    title = "3D CGI Generation",
+                    description = "Generate visuals matched to narration timing."
+                )
+
+                GenerationStep(
+                    number = "04",
+                    title = "Final Video Assembly",
+                    description = "Synchronize voice, visuals and sound."
+                )
+            }
+        }
+
+        OutlinedButton(
+            onClick = onBack,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = Purple
+            )
+        ) {
+            Text("Back to Script")
+        }
+    }
+}
+
+@Composable
+fun GenerationStep(
+    number: String,
+    title: String,
+    description: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            number,
+            color = Purple,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(Modifier.width(14.dp))
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                title,
+                color = Color.White,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
 
             Text(
-                "Continue to Video Generation →",
-                fontWeight = FontWeight.Bold
+                description,
+                color = Muted,
+                fontSize = 12.sp,
+                lineHeight = 18.sp
+            )
+
+            Text(
+                "Not connected",
+                color = Color(0xFFB58AD8),
+                fontSize = 10.sp
             )
         }
     }
