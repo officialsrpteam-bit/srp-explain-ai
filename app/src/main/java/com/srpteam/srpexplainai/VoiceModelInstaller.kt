@@ -81,11 +81,19 @@ class VoiceModelInstaller(context: Context) {
                         }
                     }
                 }
-                check(File(temp, "tokens.txt").isFile) { "Downloaded model is incomplete (tokens missing)" }
-                check(temp.listFiles()?.any { it.extension == "onnx" } == true) { "Downloaded model is incomplete (ONNX missing)" }
-                check(File(temp, "espeak-ng-data").isDirectory) { "Downloaded model is incomplete (phonemizer data missing)" }
+                // Release archives may contain a top-level model directory.
+                // Locate the actual Piper model root instead of assuming files are at archive root.
+                val modelRoot = temp.walkTopDown().firstOrNull { it.isFile && it.name == "tokens.txt" }
+                    ?.parentFile ?: error("Downloaded model is incomplete (tokens missing)")
+                check(modelRoot.listFiles()?.any { it.isFile && it.extension == "onnx" } == true) {
+                    "Downloaded model is incomplete (ONNX missing)"
+                }
+                check(File(modelRoot, "espeak-ng-data").isDirectory) {
+                    "Downloaded model is incomplete (phonemizer data missing)"
+                }
                 target.deleteRecursively()
-                check(temp.renameTo(target)) { "Could not install downloaded model" }
+                check(modelRoot.renameTo(target)) { "Could not install downloaded model" }
+                temp.deleteRecursively()
                 onResult(true, "${model.language} voice model installed")
             } catch (error: Exception) {
                 temp.deleteRecursively()
