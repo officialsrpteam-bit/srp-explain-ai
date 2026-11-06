@@ -65,6 +65,17 @@ fun VoiceoverPanel(script: String, language: String) {
                 color = Muted
             )
 
+            Button(
+                onClick = { manager.install(language) },
+                enabled = language != "বাংলা",
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (ready) "Reload $language Voice Model" else "Download $language Neural Voice")
+            }
+            if (language == "বাংলা") {
+                Text("Bengali model is not verified yet.", color = Muted, style = MaterialTheme.typography.bodySmall)
+            }
+
             Text("Narration speed: " + String.format("%.1f", speed) + "x", color = androidx.compose.ui.graphics.Color.White)
             Slider(value = speed, onValueChange = { speed = it }, valueRange = 0.8f..1.2f, steps = 3)
 
