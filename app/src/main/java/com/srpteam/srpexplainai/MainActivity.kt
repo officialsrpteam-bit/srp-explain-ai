@@ -6,7 +6,6 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -58,11 +57,12 @@ class MainActivity : ComponentActivity() {
 fun SRPApp() {
     var script by remember { mutableStateOf("") }
     var language by remember { mutableStateOf("বাংলা") }
-    var duration by remember { mutableIntStateOf(5) }
+    var aspectRatio by remember { mutableStateOf("9:16") }
     var isGenerating by remember { mutableStateOf(false) }
 
     if (isGenerating) {
         GenerationScreen(
+            aspectRatio = aspectRatio,
             onBack = { isGenerating = false }
         )
     } else {
@@ -71,8 +71,8 @@ fun SRPApp() {
             onScriptChange = { script = it },
             language = language,
             onLanguageChange = { language = it },
-            duration = duration,
-            onDurationChange = { duration = it },
+            aspectRatio = aspectRatio,
+            onAspectRatioChange = { aspectRatio = it },
             onGenerate = { isGenerating = true }
         )
     }
@@ -84,8 +84,8 @@ fun HomeScreen(
     onScriptChange: (String) -> Unit,
     language: String,
     onLanguageChange: (String) -> Unit,
-    duration: Int,
-    onDurationChange: (Int) -> Unit,
+    aspectRatio: String,
+    onAspectRatioChange: (String) -> Unit,
     onGenerate: () -> Unit
 ) {
     val context = LocalContext.current
@@ -122,6 +122,7 @@ fun HomeScreen(
                     fontSize = 21.sp,
                     fontWeight = FontWeight.Bold
                 )
+
                 Text(
                     "Explain AI",
                     color = Purple,
@@ -167,7 +168,7 @@ fun HomeScreen(
             )
         }
 
-        // MAIN FEATURE CARD
+        // MAIN FEATURE
 
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -293,52 +294,210 @@ fun HomeScreen(
             }
         }
 
-        // DURATION
+        // ASPECT RATIO
 
         Column(
             verticalArrangement = Arrangement.spacedBy(11.dp)
         ) {
             Text(
-                "Target Video Duration",
+                "Video Aspect Ratio",
                 color = Color.White,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
 
             Text(
-                "This is a target length. Final timing will follow the generated voiceover.",
+                "Choose the format for your final video.",
                 color = Muted,
-                fontSize = 12.sp,
-                lineHeight = 18.sp
+                fontSize = 12.sp
             )
 
             Row(
-                modifier = Modifier.horizontalScroll(
-                    rememberScrollState()
-                ),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                listOf(1, 5, 10, 15, 20, 25, 30).forEach { item ->
-                    FilterChip(
-                        selected = duration == item,
-                        onClick = { onDurationChange(item) },
-                        label = { Text("${item}m") },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Purple,
-                            selectedLabelColor = Color.White,
-                            containerColor = CardColor,
-                            labelColor = Muted
+                // LANDSCAPE 16:9
+
+                Card(
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        onAspectRatioChange("16:9")
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    border = if (aspectRatio == "16:9") {
+                        androidx.compose.foundation.BorderStroke(
+                            2.dp,
+                            Purple
                         )
+                    } else {
+                        null
+                    },
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (aspectRatio == "16:9") {
+                            Purple.copy(alpha = 0.13f)
+                        } else {
+                            CardColor
+                        }
                     )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(9.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(16f / 9f)
+                                .background(
+                                    Purple.copy(alpha = 0.20f),
+                                    RoundedCornerShape(8.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "16:9",
+                                color = Color.White,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Text(
+                            "Landscape",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Text(
+                            "YouTube Long Videos",
+                            color = Muted,
+                            fontSize = 10.sp
+                        )
+
+                        if (aspectRatio == "16:9") {
+                            Text(
+                                "✓ Selected",
+                                color = Purple,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                // PORTRAIT 9:16
+
+                Card(
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        onAspectRatioChange("9:16")
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    border = if (aspectRatio == "9:16") {
+                        androidx.compose.foundation.BorderStroke(
+                            2.dp,
+                            Purple
+                        )
+                    } else {
+                        null
+                    },
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (aspectRatio == "9:16") {
+                            Purple.copy(alpha = 0.13f)
+                        } else {
+                            CardColor
+                        }
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(9.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .height(85.dp)
+                                .aspectRatio(9f / 16f)
+                                .background(
+                                    Purple.copy(alpha = 0.20f),
+                                    RoundedCornerShape(8.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "9:16",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Text(
+                            "Portrait",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Text(
+                            "Shorts • Reels • TikTok",
+                            color = Muted,
+                            fontSize = 10.sp
+                        )
+
+                        if (aspectRatio == "9:16") {
+                            Text(
+                                "✓ Selected",
+                                color = Purple,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
+        }
 
-            Text(
-                "Selected: $duration minutes",
-                color = Purple,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold
+        // VIDEO LENGTH INFORMATION
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = CardColor
             )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(7.dp)
+            ) {
+                Text(
+                    "AUTOMATIC VIDEO DURATION",
+                    color = Purple,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    "Your voiceover decides the video length.",
+                    color = Color.White,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    "The final video duration will automatically match the generated narration. No manual duration selection needed.",
+                    color = Muted,
+                    fontSize = 12.sp,
+                    lineHeight = 19.sp
+                )
+            }
         }
 
         // VISUAL STYLE
@@ -418,6 +577,7 @@ fun HomeScreen(
 
 @Composable
 fun GenerationScreen(
+    aspectRatio: String,
     onBack: () -> Unit
 ) {
     Column(
@@ -461,6 +621,24 @@ fun GenerationScreen(
                 modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(13.dp)
             ) {
+                Text(
+                    "GENERATION SETTINGS",
+                    color = Purple,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    "Selected Format: $aspectRatio",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                HorizontalDivider(
+                    color = Color(0xFF383344)
+                )
+
                 Text(
                     "GENERATION STATUS",
                     color = Purple,
