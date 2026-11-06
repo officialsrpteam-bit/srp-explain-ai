@@ -35,6 +35,7 @@ dependencies {
     implementation(files("libs/sherpa_onnx-release.aar"))
 
     implementation("androidx.core:core-ktx:1.15.0")
+    implementation("org.apache.commons:commons-compress:1.27.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.activity:activity-compose:1.9.3")
 
