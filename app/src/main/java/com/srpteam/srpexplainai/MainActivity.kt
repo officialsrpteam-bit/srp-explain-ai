@@ -1,4 +1,3 @@
-
 package com.srpteam.srpexplainai
 
 import android.os.Bundle
@@ -20,10 +19,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val Background = Color(0xFF08080D)
-private val CardColor = Color(0xFF15141E)
-private val Purple = Color(0xFF9B35F5)
-private val Muted = Color(0xFF9995AA)
+// Shared colors — VoiceoverPanel.kt also uses these
+val Background = Color(0xFF08080D)
+val CardColor = Color(0xFF15141E)
+val Purple = Color(0xFF9B35F5)
+val Muted = Color(0xFF9995AA)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -294,6 +294,13 @@ fun HomeScreen(
             }
         }
 
+        // VOICEOVER GENERATOR
+
+        VoiceoverPanel(
+            script = script,
+            language = language
+        )
+
         // ASPECT RATIO
 
         Column(
@@ -316,6 +323,7 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+
                 // LANDSCAPE 16:9
 
                 Card(
