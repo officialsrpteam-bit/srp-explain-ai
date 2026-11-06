@@ -35,7 +35,7 @@ class VoiceoverManager(
         }
     }
 
-    fun generate(text: String, language: String) {
+    fun generate(text: String, language: String, speed: Float = 1.0f, speakerId: Int = 0) {
         if (text.isBlank()) {
             onError("Enter your script")
             return
@@ -55,7 +55,7 @@ class VoiceoverManager(
             return
         }
         val outputFile = File(folder, "neural_voiceover_${System.currentTimeMillis()}.wav")
-        engine.generate(text, outputFile) { success, file, message ->
+        engine.generate(text, outputFile, speakerId = speakerId, speed = speed) { success, file, message ->
             if (success && file != null) {
                 onComplete(file)
             } else {
