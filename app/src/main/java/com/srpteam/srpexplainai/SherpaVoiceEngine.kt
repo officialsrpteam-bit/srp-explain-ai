@@ -41,7 +41,8 @@ class SherpaVoiceEngine(context: Context) {
                     model = OfflineTtsModelConfig(
                         vits = OfflineTtsVitsModelConfig(
                             model = File(modelDirectory, "model.onnx").absolutePath,
-                            tokens = File(modelDirectory, "tokens.txt").absolutePath
+                            tokens = File(modelDirectory, "tokens.txt").absolutePath,
+                            dataDir = File(modelDirectory, "espeak-ng-data").absolutePath
                         ),
                         numThreads = 2,
                         provider = "cpu"
