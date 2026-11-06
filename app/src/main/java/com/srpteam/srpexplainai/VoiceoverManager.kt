@@ -5,10 +5,6 @@ import android.os.Handler
 import android.os.Looper
 import java.io.File
 
-/**
- * App-facing manager for the Sherpa-ONNX offline neural voice engine.
- * It never silently falls back to Android's basic system TTS.
- */
 class VoiceoverManager(
     context: Context,
     private val onReady: (Boolean, String) -> Unit,
@@ -17,21 +13,24 @@ class VoiceoverManager(
 ) {
     private val appContext = context.applicationContext
     private val engine = SherpaVoiceEngine(appContext)
-    private val mainHandler = Handler(Looper.getMainLooper())
-    private val modelDirectory = File(appContext.filesDir, "voice-models/bn-male")
-    @Volatile private var ready = false
+    private val installer = VoiceModelInstaller(appContext)
+    @Volatile private var readyLanguage: String? = null
 
-    init {
-        if (engine.isModelInstalled(modelDirectory)) {
-            engine.loadVitsModel(modelDirectory) { success, message ->
-                ready = success
-                onReady(success, message)
+    fun isInstalled(language: String) = installer.isInstalled(language)
+
+    fun install(language: String) {
+        onReady(false, "Downloading $language neural voice model...")
+        installer.install(language) { success, message ->
+            if (!success) {
+                onReady(false, message)
+                return@install
             }
-        } else {
-            onReady(
-                false,
-                "Neural runtime connected. A verified Bengali voice model is still required."
-            )
+            val model = installer.modelFor(language) ?: return@install
+            val directory = File(appContext.filesDir, "voice-models/${model.folder}")
+            engine.loadVitsModel(directory) { loaded, detail ->
+                readyLanguage = if (loaded) language else null
+                onReady(loaded, if (loaded) "$message. Ready to generate." else detail)
+            }
         }
     }
 
@@ -40,15 +39,15 @@ class VoiceoverManager(
             onError("Enter your script")
             return
         }
-        if (!ready) {
-            onError("A verified neural voice model is not installed yet")
+        if (readyLanguage != language) {
+            onError("Download and load the $language voice model first")
             return
         }
-        if (language != "বাংলা") {
-            onError("This installed model is Bengali only")
+        val model = installer.modelFor(language)
+        if (model == null) {
+            onError("A verified Bengali neural voice model is not available yet")
             return
         }
-
         val folder = File(appContext.getExternalFilesDir(null), "SRPVoiceovers")
         if (!folder.exists() && !folder.mkdirs()) {
             onError("Cannot create voice folder")
@@ -56,16 +55,13 @@ class VoiceoverManager(
         }
         val outputFile = File(folder, "neural_voiceover_${System.currentTimeMillis()}.wav")
         engine.generate(text, outputFile, speakerId = speakerId, speed = speed) { success, file, message ->
-            if (success && file != null) {
-                onComplete(file)
-            } else {
-                onError(message)
-            }
+            if (success && file != null) onComplete(file) else onError(message)
         }
     }
 
     fun shutdown() {
-        ready = false
+        readyLanguage = null
+        installer.shutdown()
         engine.shutdown()
     }
 }
