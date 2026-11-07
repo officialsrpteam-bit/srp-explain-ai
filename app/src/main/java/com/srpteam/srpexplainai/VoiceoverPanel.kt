@@ -20,7 +20,7 @@ fun VoiceoverPanel(script: String, language: String) {
     var status by remember { mutableStateOf("Initializing voice engine...") }
     var audioFile by remember { mutableStateOf<File?>(null) }
     var player by remember { mutableStateOf<MediaPlayer?>(null) }
-    var speed by remember { mutableFloatStateOf(1.0f) }
+    var speed by remember { mutableFloatStateOf(1.0f) }\n    var gender by remember { mutableStateOf("Male") }
 
     val manager = remember {
         VoiceoverManager(
@@ -77,6 +77,20 @@ fun VoiceoverPanel(script: String, language: String) {
                 color = Muted
             )
 
+            Text("Voice type", color = androidx.compose.ui.graphics.Color.White)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                FilterChip(
+                    selected = gender == "Male",
+                    onClick = { gender = "Male" },
+                    label = { Text("Male") }
+                )
+                FilterChip(
+                    selected = gender == "Female",
+                    onClick = { gender = "Female" },
+                    label = { Text("Female") }
+                )
+            }
+
             Text("Narration speed: " + String.format("%.1f", speed) + "x", color = androidx.compose.ui.graphics.Color.White)
             Slider(value = speed, onValueChange = { speed = it }, valueRange = 0.8f..1.2f, steps = 3)
 
@@ -84,7 +98,7 @@ fun VoiceoverPanel(script: String, language: String) {
                 onClick = {
                     audioFile = null
                     status = "Generating voiceover..."
-                    manager.generate(script, language, speed = speed)
+                    manager.generate(script, language, speed = speed, gender = gender)
                 },
                 enabled = ready && script.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
