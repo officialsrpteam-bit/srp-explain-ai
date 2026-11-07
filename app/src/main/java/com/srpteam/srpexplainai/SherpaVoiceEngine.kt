@@ -22,37 +22,38 @@ class SherpaVoiceEngine(context: Context) {
     private val mainHandler = Handler(Looper.getMainLooper())
     @Volatile private var tts: OfflineTts? = null
 
-    fun isModelInstalled(modelDirectory: File): Boolean {
-        return modelDirectory.walkTopDown().any { it.isFile && it.extension.equals("onnx", ignoreCase = true) } &&
-            File(modelDirectory, "tokens.txt").isFile &&
-            File(modelDirectory, "espeak-ng-data").isDirectory
+    fun isModelInstalled(modelDirectory: File, modelFileName: String, requiresEspeak: Boolean): Boolean {
+        return File(modelDirectory, modelFileName).isFile && File(modelDirectory, "tokens.txt").isFile && (!requiresEspeak || File(modelDirectory, "espeak-ng-data").isDirectory)
     }
 
     fun loadVitsModel(
         modelDirectory: File,
+        modelFileName: String,
+        requiresEspeak: Boolean,
         onResult: (Boolean, String) -> Unit
     ) {
         worker.execute {
             try {
-                require(isModelInstalled(modelDirectory)) {
-                    "Voice model files are missing"
-                }
-                val onnxModel = modelDirectory.walkTopDown()
-                    .first { it.isFile && it.extension.equals("onnx", ignoreCase = true) }
+                require(isModelInstalled(modelDirectory, modelFileName, requiresEspeak)) { "Voice model files are incomplete for $modelFileName" }
+                val onnxModel = File(modelDirectory, modelFileName)
                 tts?.release()
                 val config = OfflineTtsConfig(
                     model = OfflineTtsModelConfig(
                         vits = OfflineTtsVitsModelConfig(
                             model = onnxModel.absolutePath,
                             tokens = File(modelDirectory, "tokens.txt").absolutePath,
-                            dataDir = File(modelDirectory, "espeak-ng-data").absolutePath
+                            dataDir = if (requiresEspeak) File(modelDirectory, "espeak-ng-data").absolutePath else ""
                         ),
                         numThreads = 2,
+                        debug = true,
                         provider = "cpu"
                     )
                 )
-                tts = OfflineTts(config = config)
-                mainHandler.post { onResult(true, "Neural voice engine ready") }
+                val loadedEngine = OfflineTts(config = config)
+                val sampleRate = loadedEngine.sampleRate()
+                require(sampleRate > 0) { "Voice model reported an invalid sample rate" }
+                tts = loadedEngine
+                mainHandler.post { onResult(true, "Neural voice engine ready (${loadedEngine.numSpeakers()} speaker(s), ${sampleRate} Hz)") }
             } catch (error: Exception) {
                 tts?.release()
                 tts = null
@@ -79,8 +80,11 @@ class SherpaVoiceEngine(context: Context) {
                 val engine = requireNotNull(tts) { "Install and load a voice model first" }
                 outputFile.parentFile?.mkdirs()
                 val audio = engine.generate(text = text, sid = speakerId, speed = speed)
-                check(audio.samples.isNotEmpty()) { "The voice model returned empty audio" }
+                check(audio.sampleRate > 0) { "The voice model returned an invalid sample rate" }
+                check(audio.samples.size > 800) { "The voice model returned empty or too-short audio (${audio.samples.size} samples)" }
+                check(audio.samples.any { kotlin.math.abs(it) > 0.00001f }) { "The voice model returned silent audio" }
                 check(audio.save(outputFile.absolutePath)) { "Could not save generated WAV audio" }
+                check(outputFile.isFile && outputFile.length() > 44L) { "Generated WAV file is missing or empty" }
                 mainHandler.post { onResult(true, outputFile, "Neural voiceover created") }
             } catch (error: Exception) {
                 mainHandler.post {
