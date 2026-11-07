@@ -20,7 +20,8 @@ fun VoiceoverPanel(script: String, language: String) {
     var status by remember { mutableStateOf("Initializing voice engine...") }
     var audioFile by remember { mutableStateOf<File?>(null) }
     var player by remember { mutableStateOf<MediaPlayer?>(null) }
-    var speed by remember { mutableFloatStateOf(1.0f) }\n    var gender by remember { mutableStateOf("Male") }
+    var speed by remember { mutableFloatStateOf(1.0f) }
+    var gender by remember { mutableStateOf("Male") }
 
     val manager = remember {
         VoiceoverManager(
