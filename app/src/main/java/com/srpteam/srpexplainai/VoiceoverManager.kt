@@ -42,7 +42,7 @@ class VoiceoverManager(
         else onReady(false, "Initializing your phone's voice engine...")
     }
 
-    fun generate(text: String, language: String, speed: Float = 1.0f, speakerId: Int = 0) {
+    fun generate(text: String, language: String, speed: Float = 1.0f, gender: String = "Male", speakerId: Int = 0) {
         if (text.isBlank()) {
             onError("Enter your script")
             return
@@ -68,6 +68,17 @@ class VoiceoverManager(
             return
         }
 
+        // Prefer an installed voice whose name/features identify the requested gender.
+        // Android TTS does not expose a universal gender field, so use conservative matching.
+        val genderKey = if (gender.equals("Female", ignoreCase = true)) "female" else "male"
+        val matchingVoice = engine.voices
+            ?.filter { it.locale.language == locale.language }
+            ?.firstOrNull { voice ->
+                val description = (voice.name + " " + voice.features.joinToString(" ")).lowercase()
+                description.contains(genderKey)
+            }
+        if (matchingVoice != null) engine.voice = matchingVoice
+
         val folder = File(appContext.getExternalFilesDir(null), "SRPVoiceovers")
         if (!folder.exists() && !folder.mkdirs()) {
             onError("Cannot create voice folder")
@@ -77,7 +88,7 @@ class VoiceoverManager(
         val outputFile = File(folder, "voiceover_${System.currentTimeMillis()}.wav")
         val utteranceId = outputFile.name
         engine.setSpeechRate(speed.coerceIn(0.75f, 1.25f))
-        engine.setPitch(0.92f)
+        // Pitch is only a fallback when the installed engine has no gender-labelled voice.\n        if (matchingVoice == null) engine.setPitch(if (genderKey == "female") 1.08f else 0.88f)
 
         engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(id: String) = Unit
