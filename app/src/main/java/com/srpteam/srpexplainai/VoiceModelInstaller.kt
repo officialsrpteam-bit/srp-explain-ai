@@ -16,23 +16,26 @@ class VoiceModelInstaller(context: Context) {
     private val app = context.applicationContext
     private val worker = Executors.newSingleThreadExecutor()
 
-    data class Model(val language: String, val archive: String, val folder: String)
+    data class Model(val language: String, val archive: String, val folder: String, val modelFile: String, val requiresEspeak: Boolean)
 
     fun modelFor(language: String): Model? = when (language) {
         "English" -> Model(
             language,
             "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-lessac-medium.tar.bz2",
-            "vits-piper-en_US-lessac-medium"
+            "vits-piper-en_US-lessac-medium",
+            "en_US-lessac-medium.onnx", true
         )
         "Hindi" -> Model(
             language,
             "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hi_IN-rohan-medium.tar.bz2",
-            "vits-piper-hi_IN-rohan-medium"
+            "vits-piper-hi_IN-rohan-medium",
+            "hi_IN-rohan-medium.onnx", true
         )
         "বাংলা" -> Model(
             language,
             "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-coqui-bn-custom_female.tar.bz2",
-            "vits-coqui-bn-custom_female"
+            "vits-coqui-bn-custom_female",
+            "model.onnx", false
         )
         else -> null
     }
@@ -41,8 +44,8 @@ class VoiceModelInstaller(context: Context) {
         val model = modelFor(language) ?: return false
         val dir = File(app.filesDir, "voice-models/${model.folder}")
         return File(dir, "tokens.txt").isFile &&
-            dir.walkTopDown().any { it.isFile && it.extension.equals("onnx", ignoreCase = true) } &&
-            File(dir, "espeak-ng-data").isDirectory
+            File(dir, model.modelFile).isFile &&
+            (!model.requiresEspeak || File(dir, "espeak-ng-data").isDirectory)
     }
 
     fun install(language: String, onResult: (Boolean, String) -> Unit) {
@@ -93,11 +96,13 @@ class VoiceModelInstaller(context: Context) {
                 // Locate the actual Piper model root instead of assuming files are at archive root.
                 val modelRoot = temp.walkTopDown().firstOrNull { it.isFile && it.name == "tokens.txt" }
                     ?.parentFile ?: error("Downloaded model is incomplete (tokens missing)")
-                check(modelRoot.walkTopDown().any { it.isFile && it.extension.equals("onnx", ignoreCase = true) }) {
-                    "Downloaded model is incomplete (ONNX missing)"
+                check(File(modelRoot, model.modelFile).isFile) {
+                    "Downloaded model is incomplete (${model.modelFile} missing)"
                 }
-                check(File(modelRoot, "espeak-ng-data").isDirectory) {
-                    "Downloaded model is incomplete (phonemizer data missing)"
+                if (model.requiresEspeak) {
+                    check(File(modelRoot, "espeak-ng-data").isDirectory) {
+                        "Downloaded model is incomplete (phonemizer data missing)"
+                    }
                 }
                 target.deleteRecursively()
                 check(modelRoot.renameTo(target)) { "Could not install downloaded model" }
