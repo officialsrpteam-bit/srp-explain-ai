@@ -21,8 +21,8 @@ class VoiceModelInstaller(context: Context) {
     fun modelFor(language: String): Model? = when (language) {
         "English" -> Model(
             language,
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-libritts_r-medium.tar.bz2",
-            "vits-piper-en_US-libritts_r-medium"
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-lessac-medium.tar.bz2",
+            "vits-piper-en_US-lessac-medium"
         )
         "Hindi" -> Model(
             language,
