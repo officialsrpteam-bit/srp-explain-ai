@@ -5,6 +5,8 @@ import android.media.MediaPlayer
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -24,17 +26,27 @@ fun VoiceoverPanel(script: String, language: String) {
         VoiceoverManager(
             context = context,
             onReady = { success, message ->
-                ready = success
-                status = message
+                Handler(Looper.getMainLooper()).post {
+                    ready = success
+                    status = message
+                }
             },
             onComplete = { file ->
-                audioFile = file
-                status = "Voiceover created successfully"
+                Handler(Looper.getMainLooper()).post {
+                    audioFile = file
+                    status = "Voiceover created successfully"
+                }
             },
             onError = { message ->
-                status = message
+                Handler(Looper.getMainLooper()).post { status = message }
             }
         )
+    }
+
+    LaunchedEffect(manager, language) {
+        ready = false
+        audioFile = null
+        manager.install(language)
     }
 
     DisposableEffect(manager) {
@@ -64,17 +76,6 @@ fun VoiceoverPanel(script: String, language: String) {
                 status,
                 color = Muted
             )
-
-            Button(
-                onClick = { manager.install(language) },
-                enabled = language != "বাংলা",
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (ready) "Reload $language Voice Model" else "Download $language Neural Voice")
-            }
-            if (language == "বাংলা") {
-                Text("Bengali model is not verified yet.", color = Muted, style = MaterialTheme.typography.bodySmall)
-            }
 
             Text("Narration speed: " + String.format("%.1f", speed) + "x", color = androidx.compose.ui.graphics.Color.White)
             Slider(value = speed, onValueChange = { speed = it }, valueRange = 0.8f..1.2f, steps = 3)
