@@ -41,7 +41,7 @@ class VoiceModelInstaller(context: Context) {
         val model = modelFor(language) ?: return false
         val dir = File(app.filesDir, "voice-models/${model.folder}")
         return File(dir, "tokens.txt").isFile &&
-            dir.listFiles()?.any { it.extension == "onnx" } == true &&
+            dir.walkTopDown().any { it.isFile && it.extension.equals("onnx", ignoreCase = true) } &&
             File(dir, "espeak-ng-data").isDirectory
     }
 
@@ -49,6 +49,10 @@ class VoiceModelInstaller(context: Context) {
         val model = modelFor(language)
         if (model == null) {
             onResult(false, "A verified Bengali neural model is not available yet.")
+            return
+        }
+        if (isInstalled(language)) {
+            onResult(true, "${model.language} voice model already installed")
             return
         }
         worker.execute {
@@ -89,7 +93,7 @@ class VoiceModelInstaller(context: Context) {
                 // Locate the actual Piper model root instead of assuming files are at archive root.
                 val modelRoot = temp.walkTopDown().firstOrNull { it.isFile && it.name == "tokens.txt" }
                     ?.parentFile ?: error("Downloaded model is incomplete (tokens missing)")
-                check(modelRoot.listFiles()?.any { it.isFile && it.extension == "onnx" } == true) {
+                check(modelRoot.walkTopDown().any { it.isFile && it.extension.equals("onnx", ignoreCase = true) }) {
                     "Downloaded model is incomplete (ONNX missing)"
                 }
                 check(File(modelRoot, "espeak-ng-data").isDirectory) {
