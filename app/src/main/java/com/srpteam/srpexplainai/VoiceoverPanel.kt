@@ -21,7 +21,7 @@ fun VoiceoverPanel(script: String, language: String) {
     var audioFile by remember { mutableStateOf<File?>(null) }
     var player by remember { mutableStateOf<MediaPlayer?>(null) }
     var speed by remember { mutableFloatStateOf(1.0f) }
-    var gender by remember { mutableStateOf("Male") }
+    var selectedPollyVoice by remember { mutableStateOf("Brian Generative") }
 
     val manager = remember {
         VoiceoverManager(
@@ -78,19 +78,29 @@ fun VoiceoverPanel(script: String, language: String) {
                 color = Muted
             )
 
-            Text("Voice type", color = androidx.compose.ui.graphics.Color.White)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Amazon Polly male voice", color = androidx.compose.ui.graphics.Color.White)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
-                    selected = gender == "Male",
-                    onClick = { gender = "Male" },
-                    label = { Text("Male") }
+                    selected = selectedPollyVoice == "Brian Generative",
+                    onClick = { selectedPollyVoice = "Brian Generative" },
+                    label = { Text("Brian · Generative · British") }
                 )
                 FilterChip(
-                    selected = gender == "Female",
-                    onClick = { gender = "Female" },
-                    label = { Text("Female") }
+                    selected = selectedPollyVoice == "Matthew Neural",
+                    onClick = { selectedPollyVoice = "Matthew Neural" },
+                    label = { Text("Matthew · Neural · US") }
+                )
+                FilterChip(
+                    selected = selectedPollyVoice == "Brian Neural",
+                    onClick = { selectedPollyVoice = "Brian Neural" },
+                    label = { Text("Brian · Neural · British") }
                 )
             }
+            Text(
+                "Selected: $selectedPollyVoice. AWS Polly API connection is not active yet; current generation still uses your phone's installed voice.",
+                color = Muted,
+                style = MaterialTheme.typography.bodySmall
+            )
 
             Text("Narration speed: " + String.format("%.1f", speed) + "x", color = androidx.compose.ui.graphics.Color.White)
             Slider(value = speed, onValueChange = { speed = it }, valueRange = 0.8f..1.2f, steps = 3)
@@ -99,12 +109,12 @@ fun VoiceoverPanel(script: String, language: String) {
                 onClick = {
                     audioFile = null
                     status = "Generating voiceover..."
-                    manager.generate(script, language, speed = speed, gender = gender)
+                    manager.generate(script, language, speed = speed, gender = "Male")
                 },
                 enabled = ready && script.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Generate Voiceover")
+                Text("Generate with device voice")
             }
 
             if (audioFile != null) {
