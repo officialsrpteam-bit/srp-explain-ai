@@ -23,8 +23,9 @@ class SherpaVoiceEngine(context: Context) {
     @Volatile private var tts: OfflineTts? = null
 
     fun isModelInstalled(modelDirectory: File): Boolean {
-        return File(modelDirectory, "model.onnx").isFile &&
-            File(modelDirectory, "tokens.txt").isFile
+        return modelDirectory.walkTopDown().any { it.isFile && it.extension.equals("onnx", ignoreCase = true) } &&
+            File(modelDirectory, "tokens.txt").isFile &&
+            File(modelDirectory, "espeak-ng-data").isDirectory
     }
 
     fun loadVitsModel(
@@ -36,11 +37,13 @@ class SherpaVoiceEngine(context: Context) {
                 require(isModelInstalled(modelDirectory)) {
                     "Voice model files are missing"
                 }
+                val onnxModel = modelDirectory.walkTopDown()
+                    .first { it.isFile && it.extension.equals("onnx", ignoreCase = true) }
                 tts?.release()
                 val config = OfflineTtsConfig(
                     model = OfflineTtsModelConfig(
                         vits = OfflineTtsVitsModelConfig(
-                            model = File(modelDirectory, "model.onnx").absolutePath,
+                            model = onnxModel.absolutePath,
                             tokens = File(modelDirectory, "tokens.txt").absolutePath,
                             dataDir = File(modelDirectory, "espeak-ng-data").absolutePath
                         ),
