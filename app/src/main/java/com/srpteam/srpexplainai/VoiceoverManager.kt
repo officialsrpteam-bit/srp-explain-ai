@@ -88,7 +88,8 @@ class VoiceoverManager(
         val outputFile = File(folder, "voiceover_${System.currentTimeMillis()}.wav")
         val utteranceId = outputFile.name
         engine.setSpeechRate(speed.coerceIn(0.75f, 1.25f))
-        // Pitch is only a fallback when the installed engine has no gender-labelled voice.\n        if (matchingVoice == null) engine.setPitch(if (genderKey == "female") 1.08f else 0.88f)
+        // Pitch is only a fallback when the installed engine has no gender-labelled voice.
+        if (matchingVoice == null) engine.setPitch(if (genderKey == "female") 1.08f else 0.88f)
 
         engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(id: String) = Unit
