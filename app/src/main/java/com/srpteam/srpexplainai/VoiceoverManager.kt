@@ -27,7 +27,7 @@ class VoiceoverManager(
             }
             val model = installer.modelFor(language) ?: return@install
             val directory = File(appContext.filesDir, "voice-models/${model.folder}")
-            engine.loadVitsModel(directory) { loaded, detail ->
+            engine.loadVitsModel(directory, model.modelFile, model.requiresEspeak) { loaded, detail ->
                 readyLanguage = if (loaded) language else null
                 onReady(loaded, if (loaded) "$message. Ready to generate." else detail)
             }
