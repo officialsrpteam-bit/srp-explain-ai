@@ -80,10 +80,18 @@ class SherpaVoiceEngine(context: Context) {
                 val engine = requireNotNull(tts) { "Install and load a voice model first" }
                 outputFile.parentFile?.mkdirs()
                 val audio = engine.generate(text = text, sid = speakerId, speed = speed)
-                check(audio.sampleRate > 0) { "The voice model returned an invalid sample rate" }
+                // Some native builds may return a zero sampleRate in GeneratedAudio
+                // even though the loaded OfflineTts reports a valid output rate.
+                // Use the engine's authoritative rate as a safe fallback.
+                val outputSampleRate = audio.sampleRate.takeIf { it > 0 } ?: engine.sampleRate()
+                check(outputSampleRate > 0) {
+                    "TTS engine has no valid output sample rate (audio=${audio.sampleRate}, engine=${engine.sampleRate()})"
+                }
                 check(audio.samples.size > 800) { "The voice model returned empty or too-short audio (${audio.samples.size} samples)" }
                 check(audio.samples.any { kotlin.math.abs(it) > 0.00001f }) { "The voice model returned silent audio" }
-                check(audio.save(outputFile.absolutePath)) { "Could not save generated WAV audio" }
+                val audioToSave = if (audio.sampleRate == outputSampleRate) audio
+                    else com.k2fsa.sherpa.onnx.GeneratedAudio(audio.samples, outputSampleRate)
+                check(audioToSave.save(outputFile.absolutePath)) { "Could not save generated WAV audio" }
                 check(outputFile.isFile && outputFile.length() > 44L) { "Generated WAV file is missing or empty" }
                 mainHandler.post { onResult(true, outputFile, "Neural voiceover created") }
             } catch (error: Exception) {
