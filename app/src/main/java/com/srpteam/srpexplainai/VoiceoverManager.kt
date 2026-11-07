@@ -70,14 +70,27 @@ class VoiceoverManager(
 
         // Prefer an installed voice whose name/features identify the requested gender.
         // Android TTS does not expose a universal gender field, so use conservative matching.
-        val genderKey = if (gender.equals("Female", ignoreCase = true)) "female" else "male"
+        val wantsFemale = gender.equals("Female", ignoreCase = true)
+        val genderKey = if (wantsFemale) "female" else "male"
         val matchingVoice = engine.voices
             ?.filter { it.locale.language == locale.language }
             ?.firstOrNull { voice ->
                 val description = (voice.name + " " + voice.features.joinToString(" ")).lowercase()
-                description.contains(genderKey)
+                val saysFemale = description.contains("female") || description.contains("woman")
+                val saysMale = (description.contains("male") && !saysFemale) ||
+                    description.contains("man")
+                if (wantsFemale) saysFemale else saysMale
             }
-        if (matchingVoice != null) engine.voice = matchingVoice
+
+        if (matchingVoice != null) {
+            engine.voice = matchingVoice
+        } else {
+            // Do not silently claim a gender-specific voice when the device has none.
+            onReady(
+                true,
+                "No clearly labelled $gender voice is installed for $language. Using the device's default voice with pitch adjustment."
+            )
+        }
 
         val folder = File(appContext.getExternalFilesDir(null), "SRPVoiceovers")
         if (!folder.exists() && !folder.mkdirs()) {
