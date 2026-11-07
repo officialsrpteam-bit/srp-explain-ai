@@ -70,6 +70,10 @@ class VoiceoverManager(
 
         // Prefer an installed voice whose name/features identify the requested gender.
         // Android TTS does not expose a universal gender field, so use conservative matching.
+        // Reset any voice selected by the previous generation before choosing this one.
+        engine.defaultVoice?.let { defaultVoice ->
+            if (defaultVoice.locale.language == locale.language) engine.voice = defaultVoice
+        }
         val wantsFemale = gender.equals("Female", ignoreCase = true)
         val genderKey = if (wantsFemale) "female" else "male"
         val matchingVoice = engine.voices
