@@ -10,8 +10,7 @@ import java.net.URL
 import java.util.concurrent.Executors
 
 /**
- * Downloads official Sherpa-ONNX Piper bundles into app-private storage.
- * Bengali is intentionally not listed until an auditable compatible model is available.
+ * Installs official Sherpa-ONNX VITS/Piper bundles into app-private storage.
  */
 class VoiceModelInstaller(context: Context) {
     private val app = context.applicationContext
@@ -27,8 +26,13 @@ class VoiceModelInstaller(context: Context) {
         )
         "Hindi" -> Model(
             language,
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hi_IN-priyamvada-medium.tar.bz2",
-            "vits-piper-hi_IN-priyamvada-medium"
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hi_IN-rohan-medium.tar.bz2",
+            "vits-piper-hi_IN-rohan-medium"
+        )
+        "বাংলা" -> Model(
+            language,
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-coqui-bn-custom_female.tar.bz2",
+            "vits-coqui-bn-custom_female"
         )
         else -> null
     }
